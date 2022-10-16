@@ -4,7 +4,7 @@ export default function getLocation() {
       navigator.geolocation.getCurrentPosition(
         (data) => {
           const { latitude, longitude } = data.coords;
-          resolve(`[${latitude.toFixed(5)},${longitude.toFixed(5)}]`);
+          resolve([+latitude.toFixed(5), +longitude.toFixed(5)]);
         },
         (error) => {
           reject(error);

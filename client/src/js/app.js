@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 /* eslint-disable no-useless-return */
 /* eslint-disable no-case-declarations */
 /* eslint-disable no-console */
@@ -5,6 +6,9 @@ import getLocation from "./getLocation";
 import formatDate from "./formatDate";
 import formatLocation from "./formatLocation";
 import validator from "./validator";
+import getTypeFile from "./getTypeFile";
+import formatText from "./formatTest";
+import userMap from "./myMap";
 
 const timeline = document.querySelector(".timeline");
 const inputMessage = document.querySelector("#input-message");
@@ -18,7 +22,8 @@ const inputPopup = document.querySelector(".input-popup");
 const spanError = document.querySelector(".span-error");
 const iconMicrophone = document.querySelector(".fa-microphone");
 const iconCamera = document.querySelector(".fa-camera");
-const iconPicture = document.querySelector(".fa-file-image-o");
+const iconFile = document.querySelector(".fa-file");
+const iconStars = document.querySelectorAll(".star");
 const inputFile = document.querySelector(".inputFile");
 const divMedia = document.querySelector(".media-div");
 const record = document.querySelector(".fa-check");
@@ -35,24 +40,59 @@ const errors = {
   isNumber: "Значения должны быть числом",
 };
 
+function onClickIconStar(item) {
+  if (item.classList.contains("fa-star-o")) {
+    item.classList.remove("fa-star-o");
+    item.classList.add("fa-star");
+  } else {
+    item.classList.remove("fa-star");
+    item.classList.add("fa-star-o");
+  }
+}
+
+function onClickIconPin(item) {
+  const currentMessage = item.closest(".message");
+  currentMessage.classList.toggle("pinned");
+}
+
+function onClickIconEye(item) {
+  getLocation()
+    .then((res) => {
+      userMap(res);
+    })
+    .catch(() => divPopupLocation.classList.remove("hidden"));
+}
+
 function renderMessage(date, content, location, type) {
+  console.log(date, content, location, type);
   const divMessage = document.createElement("div");
   divMessage.classList.add("message");
 
-  const divDate = document.createElement("div");
-  divDate.classList.add("date");
-  divDate.textContent = formatDate(date);
-  divMessage.append(divDate);
+  const headerMessage = document.createElement("div");
+  headerMessage.classList.add("header-message");
 
   const iconStar = document.createElement("i");
-  iconStar.classList.add("fa fa-star-o");
-  divMessage.append(iconStar);
+  iconStar.classList.add("fa", "fa-star-o", "star");
+  iconStar.addEventListener("click", () => onClickIconStar(iconStar));
+  headerMessage.append(iconStar);
+
+  const iconPin = document.createElement("i");
+  iconPin.classList.add("fa", "fa-thumb-tack");
+  iconPin.addEventListener("click", () => onClickIconPin(iconPin));
+  headerMessage.append(iconPin);
+
+  const iconDelete = document.createElement("i");
+  iconDelete.classList.add("fa", "fa-times");
+  headerMessage.append(iconDelete);
+
+  divMessage.append(headerMessage);
 
   switch (type) {
     case "text":
       const divMessageContent = document.createElement("div");
       divMessageContent.classList.add("message-content");
-      divMessageContent.textContent = content;
+      const tmp = formatText(content);
+      divMessageContent.innerHTML = tmp;
       divMessage.append(divMessageContent);
       break;
     case "audio":
@@ -66,7 +106,7 @@ function renderMessage(date, content, location, type) {
       const divVideo = document.createElement("video");
       divVideo.classList.add("media");
       divVideo.controls = true;
-      divVideo.src = URL.createObjectURL(content);
+      divVideo.src = content;
       divMessage.append(divVideo);
       break;
     case "picture":
@@ -82,16 +122,22 @@ function renderMessage(date, content, location, type) {
 
   const spanLocation = document.createElement("span");
   spanLocation.classList.add("location");
-  spanLocation.textContent = location;
+  spanLocation.textContent = `[${location}]`;
   divMessage.append(spanLocation);
 
-  const icon = document.createElement("i");
-  icon.classList.add("fa");
-  icon.classList.add("fa-eye");
-  divMessage.append(icon);
+  const iconEye = document.createElement("i");
+  iconEye.classList.add("fa", "fa-eye");
+  iconEye.addEventListener("click", () => onClickIconEye(iconEye));
+  divMessage.append(iconEye);
 
-  divMessageList.prepend(divMessage);
+  const spanDate = document.createElement("span");
+  spanDate.classList.add("date");
+  spanDate.textContent = formatDate(date);
+  divMessage.append(spanDate);
 
+  divMessageList.append(divMessage);
+  window.scrollTo(0, document.body.scrollHeight);
+  timeline.classList.remove("drag-active");
   inputPopup.value = "";
   inputMessage.value = "";
   typeMessage = null;
@@ -104,9 +150,8 @@ inputMessage.addEventListener("keydown", (event) => {
   if (event.keyCode === 13) {
     typeMessage = "text";
     currentContent = inputMessage.value;
-    const date = Date.now();
     getLocation()
-      .then((res) => renderMessage(date, currentContent, res, "text"))
+      .then((res) => renderMessage(Date.now(), currentContent, res, "text"))
       .catch(() => divPopupLocation.classList.remove("hidden"));
   }
 });
@@ -157,9 +202,8 @@ iconCamera.addEventListener("click", () => {
   divInput.classList.add("hidden");
 });
 
-iconPicture.addEventListener("click", (event) => {
+iconFile.addEventListener("click", (event) => {
   inputFile.dispatchEvent(new MouseEvent("click"));
-  typeMessage = "pictire";
 });
 
 inputFile.addEventListener("change", (e) => {
@@ -167,12 +211,13 @@ inputFile.addEventListener("change", (e) => {
   if (!file) {
     return;
   }
+  const typeFile = getTypeFile(file.name);
   const reader = new FileReader();
   reader.addEventListener("load", (evt) => {
     getLocation()
-      .then((res) =>
-        renderMessage(new Date(), evt.target.result, res, "picture")
-      )
+      .then((res) => {
+        renderMessage(Date.now(), evt.target.result, res, typeFile);
+      })
       .catch(() => divPopupLocation.classList.remove("hidden"));
   });
   reader.readAsDataURL(file);
@@ -239,10 +284,11 @@ record.addEventListener("click", async () => {
 
     recorder.addEventListener("stop", () => {
       clearInterval(interval);
-      currentContent = new Blob(chunks);
-      const date = new Date();
+      const currentContent = new Blob(chunks);
       getLocation()
-        .then((res) => renderMessage(date, currentContent, res, typeMessage))
+        .then((res) =>
+          renderMessage(Date.now(), currentContent, res, typeMessage)
+        )
         .catch(() => divPopupLocation.classList.remove("hidden"));
       if (videoPlayer) videoPlayer.remove();
     });
@@ -256,5 +302,42 @@ record.addEventListener("click", async () => {
     });
   } catch (error) {
     console.log(error);
+  }
+});
+
+["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+  timeline.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+});
+
+timeline.addEventListener("dragenter", () => {
+  timeline.classList.add("drag-active");
+});
+
+timeline.addEventListener("dragleave", () => {
+  timeline.classList.remove("drag-active");
+});
+
+timeline.addEventListener("drop", (e) => {
+  const dt = e.dataTransfer;
+  const file = dt.files[0];
+  if (!file) {
+    return;
+  }
+  const typeFile = getTypeFile(file.name);
+  const reader = new FileReader();
+  reader.addEventListener("load", (evt) => {
+    getLocation()
+      .then((res) => {
+        renderMessage(Date.now(), evt.target.result, res, typeFile);
+      })
+      .catch(() => divPopupLocation.classList.remove("hidden"));
+  });
+  if (typeFile === "text") {
+    reader.readAsText(file);
+  } else {
+    reader.readAsDataURL(file);
   }
 });

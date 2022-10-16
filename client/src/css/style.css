@@ -1,21 +1,40 @@
 body {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
   background-color: rgb(205, 245, 245);
-  background-position: center center;
-  background-size: 50px;
 }
 .container {
-  width: 80%;
-  height: 90vh;
-  margin: 30px auto 30px auto;
-  position: relative;
+  width: 90%;
+  min-height: 95vh;
+  margin: 10px auto 10px auto;
+  display: flex;
+  flex-direction: column;
 }
 .timeline {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: 90%;
+}
+.pinned {
+  position: fixed;
+  left: 50%;
+  top: 0px;
+  transform: translate(-50%);
+  width: 95%;
+}
+.header-message {
+  display: flex;
+  justify-content: right;
+  margin-bottom: 5px;
+}
+.star,
+.fa-thumb-tack {
+  margin-right: 15px;
+}
+.date {
+  float: right;
 }
 input,
 .media-div {
@@ -44,7 +63,7 @@ input,
 }
 .icons {
   position: absolute;
-  right: 30px;
+  right: 20px;
   top: 3px;
 }
 .message {
@@ -58,10 +77,6 @@ input,
 }
 .location {
   margin-right: 5px;
-}
-.date {
-  text-align: right;
-  margin-bottom: 5px;
 }
 .message-content {
   margin-bottom: 5px;
@@ -103,4 +118,17 @@ input,
   width: 40%;
   margin-top: 10px;
   margin-bottom: 10px;
+}
+.drag-active {
+  border: 1px dashed blue;
+}
+.maps-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 2rem;
+  z-index: 100;
+}
+.fa:hover {
+  cursor: pointer;
 }
