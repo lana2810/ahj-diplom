@@ -14,6 +14,8 @@
     "forever": "^2.0.0",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
+    "koa-combine-routers": "^4.0.2",
+    "koa-router": "^8.0.8",
     "koa-static": "^5.0.0",
     "uuid": "^8.3.2"
   },

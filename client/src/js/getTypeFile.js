@@ -1,12 +1,15 @@
 export default function getTypeFile(str) {
   const extention = str.split(".").pop();
-  let result;
+  let result = "file";
   if (
     ["jpeg", "jpg", "tiff", "psd", "bmp", "png", "gif"].includes(
       extention.toLowerCase()
     )
   ) {
     result = "picture";
+  }
+  if (["mp3", "ogg", "wav"].includes(extention.toLowerCase())) {
+    result = "audio";
   }
   if (
     ["asf", "avi", "mp4", "m4v", "mov", "mpg", "mpeg"].includes(
@@ -15,9 +18,8 @@ export default function getTypeFile(str) {
   ) {
     result = "video";
   }
-  if (["txt", "doc", "rtf"].includes(extention.toLowerCase())) {
+  if (["txt", "rtf", "odt"].includes(extention.toLowerCase())) {
     result = "text";
   }
-  if (!result) result = "other";
   return result;
 }
