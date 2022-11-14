@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 /* eslint-disable no-use-before-define */
 /* eslint-disable no-undef */
 /* eslint-disable no-useless-return */
@@ -5,260 +6,168 @@
 /* eslint-disable no-console */
 import API from "./api";
 import getLocation from "./getLocation";
-import formatDate from "./formatDate";
-import formatLocation from "./formatLocation";
-import validator from "./validator";
+import renderNote from "./renderNote";
 import getTypeFile from "./getTypeFile";
-import formatText from "./formatTest";
-import userMap from "./myMap";
+import listLinks from "./listLinks";
 
 const timeline = document.querySelector(".timeline");
 const inputMessage = document.querySelector("#input-message");
 const divInput = document.querySelector(".input-div");
-const divMessageList = document.querySelector(".message-list");
 const divPopupLocation = document.querySelector(".popup-location");
 const divPopupPermission = document.querySelector(".popup-permission");
 const divPopupHeader = document.querySelector(".popup-header");
 const btnCancel = document.querySelectorAll(".cancel");
 const btnConfirm = document.querySelector(".confirm");
-const inputPopup = document.querySelector(".input-popup");
-const spanError = document.querySelector(".span-error");
 const iconMicrophone = document.querySelector(".fa-microphone");
 const iconCamera = document.querySelector(".fa-camera");
 const iconFile = document.querySelector(".fa-file");
-const iconStars = document.querySelectorAll(".star");
+
 const iconDots = document.querySelector(".fa-ellipsis-v");
 const inputFile = document.querySelector(".inputFile");
 const divMedia = document.querySelector(".media-div");
 const record = document.querySelector(".fa-check");
 const stop = document.querySelector(".fa-times");
 const timer = document.querySelector(".timer");
+const divMessageList = document.querySelector(".message-list");
+const iconHome = document.querySelector(".fa-home");
 
 let interval;
-let typeMessage;
+let typeNote;
 let currentContent;
+let indexPart;
+let filter;
+const partSize = 5;
 
-const errors = {
-  isRequired: "Поле должно быть заполнено",
-  isComma: "Значения должны разделятся запятой",
-  isNumber: "Значения должны быть числом",
-};
+init();
 
-function onClickIconStar(item) {
-  if (item.classList.contains("fa-star-o")) {
-    item.classList.remove("fa-star-o");
-    item.classList.add("fa-star");
-  } else {
-    item.classList.remove("fa-star");
-    item.classList.add("fa-star-o");
+iconHome.addEventListener("click", () => {
+  init();
+});
+
+async function init() {
+  divMessageList.classList.remove("hidden");
+  divMessageList.innerHTML = "";
+  indexPart = 1;
+  filter = "all";
+  const notes = await API.getNotes(indexPart, filter);
+  console.log(notes);
+  render(notes);
+}
+
+divMessageList.addEventListener("scroll", async () => {
+  if (divMessageList.scrollTop === 0) {
+    const lastIndexNote = await API.getLastIndex();
+    if (lastIndexNote > partSize * indexPart) {
+      indexPart++;
+      const tmp = await API.getNotes(indexPart, filter);
+      tmp.map(async (note) => {
+        const divMessage = await renderNote({ ...note });
+        divMessageList.prepend(divMessage);
+      });
+    }
   }
+});
+
+function render(items) {
+  items.map(async (note) => {
+    const divMessage = await renderNote({ ...note });
+    divMessageList.prepend(divMessage);
+    divMessageList.scrollTop = divMessageList.scrollHeight;
+  });
 }
 
-function onClickIconPin(item) {
-  const currentMessage = item.closest(".message");
-  currentMessage.classList.toggle("pinned");
-}
-
-function onClickIconEye(item) {
-  getLocation()
-    .then((res) => {
-      userMap(res);
-    })
-    .catch(() => divPopupLocation.classList.remove("hidden"));
-}
-async function loadNote(fileName, date, content, location, type) {
-  const formData = new FormData();
-  formData.append("fileName", fileName);
-  formData.append("date", date);
-  formData.append("content", content);
-  formData.append("location", location);
-  formData.append("type", type);
-  const tmp = await API.createNote(formData);
-  console.log(tmp);
-}
-function renderMessage(fileName, date, content, location) {
-  console.log(fileName, date, content, location);
-
-  const divMessage = document.createElement("div");
-  divMessage.classList.add("message");
-
-  const headerMessage = document.createElement("div");
-  headerMessage.classList.add("header-message");
-
-  const iconStar = document.createElement("i");
-  iconStar.classList.add("fa", "fa-star-o", "star");
-  iconStar.addEventListener("click", () => onClickIconStar(iconStar));
-  headerMessage.append(iconStar);
-
-  const iconPin = document.createElement("i");
-  iconPin.classList.add("fa", "fa-thumb-tack");
-  iconPin.addEventListener("click", () => onClickIconPin(iconPin));
-  headerMessage.append(iconPin);
-
-  const iconDelete = document.createElement("i");
-  iconDelete.classList.add("fa", "fa-times");
-  headerMessage.append(iconDelete);
-
-  divMessage.append(headerMessage);
-  const typeContent = fileName === "text" ? fileName : getTypeFile(fileName);
-
-  switch (typeContent) {
-    case "text":
-      const divMessageContent = document.createElement("div");
-      divMessageContent.classList.add("message-content");
-      const tmp = formatText(content);
-      divMessageContent.innerHTML = tmp;
-      divMessage.append(divMessageContent);
-      break;
-    case "audio":
-      const divAudio = document.createElement("audio");
-      divAudio.classList.add("media");
-      divAudio.controls = true;
-      // divAudio.src = title ? URL.createObjectURL(content) : content;
-      divAudio.src = "http://localhost:7070/" + fileName;
-      divMessage.append(divAudio);
-      break;
-    case "video":
-      const divVideo = document.createElement("video");
-      divVideo.classList.add("media");
-      divVideo.controls = true;
-      divVideo.src = "http://localhost:7070/" + fileName;
-      divMessage.append(divVideo);
-      break;
-    case "picture":
-      const imgPicture = document.createElement("img");
-      imgPicture.classList.add("media");
-      imgPicture.src = "http://localhost:7070/" + fileName;
-      imgPicture.alt = "картинка пользователя";
-      divMessage.append(imgPicture);
-      break;
-    case "file":
-      const iconFileUser = document.createElement("i");
-      iconFileUser.classList.add("fa", "fa-file-o", "media");
-      iconFileUser.style.fontSize = "3rem";
-      divMessage.append(iconFileUser);
-      break;
-    default:
-      break;
-  }
-
-  const divTitle = document.createElement("div");
-  divTitle.textContent = fileName;
-  divTitle.classList.add("message-title");
-  divMessage.append(divTitle);
-
-  const spanLocation = document.createElement("span");
-  spanLocation.classList.add("location");
-  spanLocation.textContent = `[${location}]`;
-  divMessage.append(spanLocation);
-
-  const iconEye = document.createElement("i");
-  iconEye.classList.add("fa", "fa-eye");
-  iconEye.addEventListener("click", () => onClickIconEye(iconEye));
-  divMessage.append(iconEye);
-
-  const spanDate = document.createElement("span");
-  spanDate.classList.add("date");
-  spanDate.textContent = formatDate(date);
-  divMessage.append(spanDate);
-
-  divMessageList.append(divMessage);
-  window.scrollTo(0, document.body.scrollHeight);
+function resetInput() {
   timeline.classList.remove("drag-active");
-  inputPopup.value = "";
   inputMessage.value = "";
-  typeMessage = null;
-  currentContent = null;
   divMedia.classList.add("hidden");
   divInput.classList.remove("hidden");
+  currentContent = undefined;
+  typeNote = undefined;
 }
 
 inputMessage.addEventListener("keydown", async (event) => {
   if (event.keyCode === 13) {
     event.preventDefault();
-    typeMessage = "text";
-    let location;
     try {
-      location = await getLocation();
+      const location = await getLocation();
+      const date = Date.now();
+      const { id, fileName, selected } = await API.createNote(
+        "text",
+        inputMessage.value,
+        date,
+        location
+      );
+      const divMessage = await renderNote({
+        id,
+        fileName,
+        date,
+        location,
+        selected,
+      });
+      divMessageList.append(divMessage);
+      resetInput();
     } catch (error) {
+      currentContent = inputMessage.value;
+      typeNote = "text";
       divPopupLocation.classList.remove("hidden");
     }
-    renderMessage("text", Date.now(), inputMessage.value, location);
+    divMessageList.scrollTop = divMessageList.scrollHeight;
   }
 });
 
 btnCancel.forEach((item) => {
   const popup = item.closest(".popup");
   item.addEventListener("click", (e) => {
-    inputPopup.value = "";
-    spanError.textContent = "";
+    e.preventDefault();
     popup.classList.add("hidden");
-    divMedia.classList.add("hidden");
-    divInput.classList.remove("hidden");
-    typeMessage = null;
-    currentContent = null;
+    resetInput();
   });
 });
 
-btnConfirm.addEventListener("click", (e) => {
+btnConfirm.addEventListener("click", async (e) => {
   e.preventDefault();
-  if (validator("isRequired", inputPopup.value)) {
-    spanError.textContent = errors.isRequired;
-    return;
-  }
-  if (validator("isComma", inputPopup.value)) {
-    spanError.textContent = errors.isComma;
-    return;
-  }
-  if (validator("isNumber", inputPopup.value)) {
-    spanError.textContent = errors.isNumber;
-    return;
-  }
   const date = Date.now();
-  const [latitude, longitude] = formatLocation(inputPopup.value);
-  const location = `[${latitude},${longitude}]`;
-  renderMessage(date, currentContent, location, typeMessage);
+  const { id, fileName, selected } = await API.createNote(
+    typeNote,
+    currentContent,
+    date,
+    undefined
+  );
+  const divMessage = await renderNote({
+    id,
+    fileName,
+    date,
+    selected,
+  });
+  divMessageList.append(divMessage);
   divPopupLocation.classList.add("hidden");
+  resetInput();
+  divMessageList.scrollTop = divMessageList.scrollHeight;
 });
 
 iconMicrophone.addEventListener("click", () => {
-  typeMessage = "audio";
+  typeNote = "audio";
   divMedia.classList.remove("hidden");
   divInput.classList.add("hidden");
 });
 
 iconCamera.addEventListener("click", () => {
-  typeMessage = "video";
+  typeNote = "video";
   divMedia.classList.remove("hidden");
   divInput.classList.add("hidden");
-});
-
-iconDots.addEventListener("click", (e) => {
-  e.preventDefault();
-  divPopupHeader.classList.toggle("hidden");
-});
-
-iconFile.addEventListener("click", (event) => {
-  inputFile.dispatchEvent(new MouseEvent("click"));
-});
-
-inputFile.addEventListener("change", (e) => {
-  const file = inputFile.files && inputFile.files[0];
-  if (!file) {
-    return;
-  }
-  loadFile(file);
 });
 
 record.addEventListener("click", async () => {
   let stream;
   let videoPlayer;
-  switch (typeMessage) {
+  let options = {};
+  switch (typeNote) {
     case "audio":
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
+        options = { type: "audio/mp3" };
       } catch (error) {
         divPopupPermission.classList.remove("hidden");
       }
@@ -268,13 +177,14 @@ record.addEventListener("click", async () => {
       try {
         videoPlayer = document.createElement("video");
         videoPlayer.classList.add("media");
-        videoPlayer.setAttribute("muted", true);
+        videoPlayer.muted = true;
         timeline.append(videoPlayer);
 
         stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
           video: true,
         });
+        options = { type: "video/mp4" };
         videoPlayer.srcObject = stream;
         videoPlayer.addEventListener("canplay", () => {
           videoPlayer.play();
@@ -283,7 +193,6 @@ record.addEventListener("click", async () => {
         divPopupPermission.classList.remove("hidden");
       }
       break;
-
     default:
       break;
   }
@@ -305,21 +214,35 @@ record.addEventListener("click", async () => {
       }, 1000);
     });
 
-    recorder.addEventListener("dataavailable", (event) => {
+    recorder.addEventListener("dataavailable", async (event) => {
       chunks.push(event.data);
     });
 
     recorder.addEventListener("stop", async () => {
-      let location;
       clearInterval(interval);
-      const content = URL.createObjectURL(new Blob(chunks));
+      currentContent = new Blob(chunks, options);
       try {
-        location = await getLocation();
+        const location = await getLocation();
+        const date = Date.now();
+        const { id, fileName, selected } = await API.createNote(
+          typeNote,
+          currentContent,
+          date,
+          location
+        );
+        const divMessage = await renderNote({
+          id,
+          fileName,
+          date,
+          selected,
+        });
+        divMessageList.append(divMessage);
       } catch (error) {
         divPopupLocation.classList.remove("hidden");
       }
-      renderMessage(null, Date.now(), content, location, typeMessage);
       if (videoPlayer) videoPlayer.remove();
+      resetInput();
+      divMessageList.scrollTop = divMessageList.scrollHeight;
     });
 
     recorder.start();
@@ -332,6 +255,18 @@ record.addEventListener("click", async () => {
   } catch (error) {
     console.log(error);
   }
+});
+
+iconFile.addEventListener("click", (event) => {
+  inputFile.dispatchEvent(new MouseEvent("click"));
+});
+
+inputFile.addEventListener("change", (e) => {
+  const file = inputFile.files && inputFile.files[0];
+  if (!file) {
+    return;
+  }
+  loadFile(file);
 });
 
 ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
@@ -358,34 +293,54 @@ timeline.addEventListener("drop", async (event) => {
 });
 
 async function loadFile(file) {
-  let location;
-  let content = null;
-  const formData = new FormData();
-  formData.append("file", file);
-  const fileName = await API.copyFile(formData);
+  const type = getTypeFile(file.name);
   try {
-    location = await getLocation();
+    const location = await getLocation();
+    const date = Date.now();
+    const { id, fileName, selected } = await API.createNote(
+      type,
+      file,
+      date,
+      location
+    );
+    const divMessage = await renderNote({
+      id,
+      fileName,
+      date,
+      selected,
+    });
+    divMessageList.append(divMessage);
+    resetInput();
+    divMessageList.scrollTop = divMessageList.scrollHeight;
   } catch (error) {
+    typeNote = type;
+    currentContent = file;
     divPopupLocation.classList.remove("hidden");
   }
-  if (getTypeFile(file.name) === "text") {
-    content = await preViewText(file);
-  }
-  renderMessage(fileName, Date.now(), content, location);
 }
 
-function preViewText(file) {
-  return new Promise((resolve, reject) => {
-    let content;
-    try {
-      const reader = new FileReader();
-      reader.addEventListener("load", async (evt) => {
-        content = evt.target.result;
-        resolve(content);
-      });
-      reader.readAsText(file);
-    } catch (error) {
-      reject(error);
+iconDots.addEventListener("click", (e) => {
+  e.preventDefault();
+  divPopupHeader.classList.toggle("hidden");
+});
+
+divPopupHeader.addEventListener("click", async (e) => {
+  e.preventDefault();
+  const { target } = e;
+  if (target.classList.contains("header-li")) {
+    const property = target.className.split(" ")[1];
+    divMessageList.innerHTML = "";
+    if (property === "links") {
+      indexPart = 100;
+      const links = await API.getLinks();
+      const divListLinks = listLinks(links);
+      divMessageList.append(divListLinks);
+    } else {
+      filter = property;
+      indexPart = 1;
+      const notes = await API.getNotes(indexPart, property);
+      render(notes);
     }
-  });
-}
+    divPopupHeader.classList.add("hidden");
+  }
+});

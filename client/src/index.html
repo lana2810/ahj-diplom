@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Geolocation, Notification, Media</title>
+    <title>Chaos</title>
     <script
       src="https://api-maps.yandex.ru/2.1/?apikey=d204fe37-151f-4a52-84e3-b43376c0453a&lang=ru_RU"
       type="text/javascript"
@@ -19,18 +19,13 @@
     <div class="container">
       <div class="popup popup-location hidden">
         <div class="popup-content">
-          <p>Что-то пошло не так</p>
           <p>
-            К сожалению, нам не удалось определить ваше местоположение,
-            пожалуйста, дайте разрешение на использование геолокации, либо
-            введите координаты вручную
+            К сожалению, нам не удалось определить ваше местоположение.
+            Продолжите или дайте разрешение на использование геолокации
           </p>
-          <p>Широта и долгота через запятую</p>
         </div>
-        <input type="text" class="input-popup" />
-        <span class="span-error"></span>
         <div class="form-footer">
-          <button type="submit" class="btn confirm">OK</button>
+          <button type="submit" class="btn confirm">Продолжить</button>
           <button type="reset" class="btn cancel">Отмена</button>
         </div>
       </div>
@@ -41,24 +36,30 @@
         <button type="reset" class="btn cancel">Отмена</button>
       </div>
       <div class="header">
-        <div class="header_content">chaos organizer</div>
+        <div class="header_content">
+          <i class="fa fa-home" aria-hidden="true"></i>
+          <span>chaos organizer</span>
+        </div>
         <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
       </div>
       <div class="popup-header hidden">
         <ul>
-          <li class="header-li">
-            <i class="fa fa-files-o" aria-hidden="true"></i>Файлы
-          </li>
-          <li class="header-li">
+          <li class="header-li picture">
             <i class="fa fa-file-image-o" aria-hidden="true"></i>Картинки
           </li>
-          <li class="header-li">
+          <li class="header-li audio">
+            <i class="fa fa-file-video-o" aria-hidden="true"></i>Аудио
+          </li>
+          <li class="header-li video">
             <i class="fa fa-file-video-o" aria-hidden="true"></i>Видео
           </li>
-          <li class="header-li">
+          <li class="header-li text">
+            <i class="fa fa-file-video-o" aria-hidden="true"></i>Заметки
+          </li>
+          <li class="header-li links">
             <i class="fa fa-link" aria-hidden="true"></i> Ссылки
           </li>
-          <li class="header-li">
+          <li class="header-li selected">
             <i class="fa fa-star" aria-hidden="true"></i>Избранное
           </li>
         </ul>

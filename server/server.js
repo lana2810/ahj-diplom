@@ -6,7 +6,8 @@ const koaStatic = require("koa-static");
 const path = require("path");
 
 const app = new Koa();
-
+const public = path.join(__dirname, "public");
+app.use(koaStatic(public));
 app.use(
   koaBody({
     urlencoded: true,
@@ -49,8 +50,7 @@ app.use(async (ctx, next) => {
   }
 });
 app.use(router());
-const public = path.join(__dirname, "public");
-app.use(koaStatic(public));
+
 const server = http.createServer(app.callback());
 const port = process.env.PORT || 7070;
 server.listen(port, (err) => {
