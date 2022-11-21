@@ -347,7 +347,7 @@ divPopupHeader.addEventListener("click", async (e) => {
       divMessageList.removeEventListener("scroll", scrollFunction);
       filter = property;
       indexPart = 0;
-
+      console.log("загружено: ", indexPart, "часть");
       const currentScroll = divMessageList.scrollHeight;
       const notes = await API.getNotes(indexPart, filter);
       notes.map(async (note) => {

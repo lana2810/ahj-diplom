@@ -1,6 +1,8 @@
 const partition = (items, partNumber) => {
-  const startIndex = (partNumber - 1) * 5;
-  return [...items].splice(startIndex, 5);
+  console.log(partNumber);
+  const partSize = 5;
+  const startIndex = partNumber * partSize;
+  return [...items].splice(startIndex, partSize);
 };
 
 module.exports = partition;

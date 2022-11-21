@@ -8,7 +8,9 @@ const router = new Router();
 
 function getData() {
   const data = fs.readFileSync("./public/notes.json");
-  const sortData = JSON.parse(data).sort((a, b) => (a.date > b.date ? -1 : 1));
+  const sortData = JSON.parse(data).sort((a, b) =>
+    +a.date > +b.date ? -1 : 1
+  );
   return sortData;
 }
 function pushData(data) {
@@ -54,7 +56,7 @@ router.get("/notes", (ctx) => {
   }
 });
 
-router.get("/notes/lastIndex", (ctx) => {
+router.get("/notes/numberNotes", (ctx) => {
   ctx.response.set("Access-Control-Allow-Origin", "*");
   const notes = getData();
   ctx.response.body = notes.length;
