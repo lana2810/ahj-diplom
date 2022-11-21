@@ -21,7 +21,6 @@ const btnConfirm = document.querySelector(".confirm");
 const iconMicrophone = document.querySelector(".fa-microphone");
 const iconCamera = document.querySelector(".fa-camera");
 const iconFile = document.querySelector(".fa-file");
-
 const iconDots = document.querySelector(".fa-ellipsis-v");
 const inputFile = document.querySelector(".inputFile");
 const divMedia = document.querySelector(".media-div");
@@ -45,35 +44,44 @@ iconHome.addEventListener("click", () => {
 });
 
 async function init() {
-  divMessageList.classList.remove("hidden");
+  divMessageList.removeEventListener("scroll", scrollFunction);
   divMessageList.innerHTML = "";
-  indexPart = 1;
+  indexPart = 0;
   filter = "all";
+  console.log("загружено: ", indexPart, "часть");
   const notes = await API.getNotes(indexPart, filter);
-  console.log(notes);
-  render(notes);
-}
-
-divMessageList.addEventListener("scroll", async () => {
-  if (divMessageList.scrollTop === 0) {
-    const lastIndexNote = await API.getLastIndex();
-    if (lastIndexNote > partSize * indexPart) {
-      indexPart++;
-      const tmp = await API.getNotes(indexPart, filter);
-      tmp.map(async (note) => {
-        const divMessage = await renderNote({ ...note });
-        divMessageList.prepend(divMessage);
-      });
-    }
-  }
-});
-
-function render(items) {
-  items.map(async (note) => {
+  notes.map(async (note) => {
     const divMessage = await renderNote({ ...note });
     divMessageList.prepend(divMessage);
     divMessageList.scrollTop = divMessageList.scrollHeight;
   });
+
+  window.setTimeout(() => {
+    divMessageList.addEventListener("scroll", scrollFunction);
+  }, 3000);
+}
+
+async function scrollFunction() {
+  if (divMessageList.scrollTop === 0) {
+    const numberNotes = await API.getNumberNotes();
+    console.log(numberNotes);
+    if (numberNotes > partSize * (indexPart + 1)) {
+      divMessageList.removeEventListener("scroll", scrollFunction);
+      indexPart++;
+      console.log("загружено: ", indexPart, "часть");
+      const currentScroll = divMessageList.scrollHeight;
+      const notes = await API.getNotes(indexPart, filter);
+      notes.map(async (note) => {
+        const divMessage = await renderNote({ ...note });
+        divMessageList.prepend(divMessage);
+        divMessageList.scrollTop = divMessageList.scrollHeight - currentScroll;
+      });
+
+      window.setTimeout(() => {
+        divMessageList.addEventListener("scroll", scrollFunction);
+      }, 3000);
+    }
+  }
 }
 
 function resetInput() {
@@ -331,15 +339,26 @@ divPopupHeader.addEventListener("click", async (e) => {
     const property = target.className.split(" ")[1];
     divMessageList.innerHTML = "";
     if (property === "links") {
-      indexPart = 100;
+      indexPart = 1000;
       const links = await API.getLinks();
       const divListLinks = listLinks(links);
       divMessageList.append(divListLinks);
     } else {
+      divMessageList.removeEventListener("scroll", scrollFunction);
       filter = property;
-      indexPart = 1;
-      const notes = await API.getNotes(indexPart, property);
-      render(notes);
+      indexPart = 0;
+
+      const currentScroll = divMessageList.scrollHeight;
+      const notes = await API.getNotes(indexPart, filter);
+      notes.map(async (note) => {
+        const divMessage = await renderNote({ ...note });
+        divMessageList.prepend(divMessage);
+        divMessageList.scrollTop = divMessageList.scrollHeight - currentScroll;
+      });
+
+      window.setTimeout(() => {
+        divMessageList.addEventListener("scroll", scrollFunction);
+      }, 3000);
     }
     divPopupHeader.classList.add("hidden");
   }

@@ -18,10 +18,10 @@ export default class API {
     });
   }
 
-  static getLastIndex() {
+  static getNumberNotes() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("GET", `${URL}/notes/lastIndex`);
+      xhr.open("GET", `${URL}/notes/numberNotes`);
       xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(xhr.response);
