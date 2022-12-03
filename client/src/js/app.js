@@ -36,6 +36,7 @@ let currentContent;
 let indexPart;
 let filter;
 const partSize = 5;
+let loading;
 
 init();
 
@@ -44,45 +45,41 @@ iconHome.addEventListener("click", () => {
 });
 
 async function init() {
-  divMessageList.removeEventListener("scroll", scrollFunction);
   divMessageList.innerHTML = "";
   indexPart = 0;
   filter = "all";
-  console.log("загружено: ", indexPart, "часть");
+  loading = false;
   const notes = await API.getNotes(indexPart, filter);
   notes.map(async (note) => {
     const divMessage = await renderNote({ ...note });
     divMessageList.prepend(divMessage);
     divMessageList.scrollTop = divMessageList.scrollHeight;
   });
-
-  window.setTimeout(() => {
-    divMessageList.addEventListener("scroll", scrollFunction);
-  }, 3000);
+  loading = true;
 }
-
-async function scrollFunction() {
-  if (divMessageList.scrollTop === 0) {
-    const numberNotes = await API.getNumberNotes();
-    console.log(numberNotes);
-    if (numberNotes > partSize * (indexPart + 1)) {
-      divMessageList.removeEventListener("scroll", scrollFunction);
-      indexPart++;
-      console.log("загружено: ", indexPart, "часть");
-      const currentScroll = divMessageList.scrollHeight;
-      const notes = await API.getNotes(indexPart, filter);
-      notes.map(async (note) => {
-        const divMessage = await renderNote({ ...note });
-        divMessageList.prepend(divMessage);
-        divMessageList.scrollTop = divMessageList.scrollHeight - currentScroll;
-      });
-
-      window.setTimeout(() => {
-        divMessageList.addEventListener("scroll", scrollFunction);
-      }, 3000);
+divMessageList.addEventListener("scroll", async () => {
+  if (loading) {
+    console.log("!!!");
+    if (divMessageList.scrollTop === 0) {
+      console.log("???");
+      const numberNotes = await API.getNumberNotes();
+      if (numberNotes > partSize * (indexPart + 1)) {
+        loading = false;
+        indexPart++;
+        console.log("загружено: ", indexPart, "часть");
+        const currentScroll = divMessageList.scrollHeight;
+        const notes = await API.getNotes(indexPart, filter);
+        notes.map(async (note) => {
+          const divMessage = await renderNote({ ...note });
+          divMessageList.prepend(divMessage);
+          divMessageList.scrollTop =
+            divMessageList.scrollHeight - currentScroll;
+        });
+        loading = true;
+      }
     }
   }
-}
+});
 
 function resetInput() {
   timeline.classList.remove("drag-active");
@@ -344,9 +341,9 @@ divPopupHeader.addEventListener("click", async (e) => {
       const divListLinks = listLinks(links);
       divMessageList.append(divListLinks);
     } else {
-      divMessageList.removeEventListener("scroll", scrollFunction);
       filter = property;
       indexPart = 0;
+      loading = false;
       console.log("загружено: ", indexPart, "часть");
       const currentScroll = divMessageList.scrollHeight;
       const notes = await API.getNotes(indexPart, filter);
@@ -355,10 +352,7 @@ divPopupHeader.addEventListener("click", async (e) => {
         divMessageList.prepend(divMessage);
         divMessageList.scrollTop = divMessageList.scrollHeight - currentScroll;
       });
-
-      window.setTimeout(() => {
-        divMessageList.addEventListener("scroll", scrollFunction);
-      }, 3000);
+      loading = true;
     }
     divPopupHeader.classList.add("hidden");
   }
